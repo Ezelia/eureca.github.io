@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>eureca.io</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap -->
+<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+<link href="css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
+
+<link href="css/darkstrap-v0.9.0.css" rel="stylesheet" media="screen">
+<link href="css/prettify.css" rel="stylesheet" />
+<style>
+#content {
+  margin-top: 50px; }
+
+form.well,
+.shift-up {
+  margin-top: -19px; }
+
+.span6 > .well {
+  margin-top: -19px; }
+
+.ds-margin-top, h2 {
+  margin-top: 50px; }
+
+.popovers .popover {
+  display: block;
+  float: left;
+  margin: 20px;
+  position: relative;
+  width: 260px;
+}
+
+</style>
+
+</head>
+<body data-spy="scroll" data-target=".navbar">
+    <a id="anchor-prez"></a><br />
+
+    <div class="container" id="content">
+
+
+    <div class="hero-unit">
+      <h1>eureca.io</h1>
+      <p>Author <a href="https://github.com/alaa-eddine">Alaa-eddine K.</a></p>
+      <p>a nodejs bidirectional RPC using engine.io or sockjs as transport layer</p>
+    </div>
+
+    <div class='page-header'>
+      <h1>Usage</h1>
+	  <h2>Base example</h2>
+	  <p>
+		here we setup a server that expose hello() function.<br />
+		we can call this function from a browser client or nodejs client.
+	  </p>	  
+    </div>
+	
+    <div class="row">
+      <div class="span6">
+		<h3 class="well">Server side</h3>
+		<div class="well">		
+		<h4 class="label label-success"> express server </h4>
+<pre class="prettyprint linenums language-javascript">
+var express = require('express')
+  , app = express(app)
+  , server = require('http').createServer(app);
+var EurecaServer = require('eureca.io').EurecaServer;
+
+var eurecaServer = new EurecaServer();
+
+eurecaServer.attach(server);
+
+
+//functions under "exports" namespace will be exposed to client side
+eurecaServer.exports.hello = function () {
+    console.log('Hello from client');
+}
+//------------------------------------------
+
+//see browser client side code for index.html content
+app.get('/', function (req, res, next) {
+    res.sendfile('index.html');
+});
+
+server.listen(8000);
+</pre>		
+		</div>
+      </div>
+      <div class="span6">
+	  <h3 class="well">Client side</h3>
+		<div class="well">
+		
+		
+          <ul class="nav nav-tabs">
+            <li class="active"><a href="#bclient1" data-toggle="tab">Browser client</a></li>
+            <li><a href="#nclient1" data-toggle="tab">Nodejs client</a></li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane active" id="bclient1">
+<pre class="prettyprint linenums language-html">
+&lt;!doctype html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Engine.io test&lt;/title&gt;
+        &lt;script src=&quot;/eureca.js&quot;&gt;&lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;    
+        &lt;script&gt;
+            var client = new Eureca.EurecaClient();
+
+            client.ready(function (proxy) {
+                proxy.hello();
+            });
+        &lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</pre>	
+            </div>
+            <div class="tab-pane" id="nclient1">
+<pre class="prettyprint linenums language-javascript">
+var EurecaClient = require('../../').EurecaClient;
+var client = new EurecaClient({ uri: 'http://localhost:8000/' });
+
+client.ready(function (proxy) {
+    proxy.hello();
+});
+</pre>	
+            </div>
+          </div>
+		  			  
+		</div>
+      </div>
+    </div>	
+	
+
+    <div class='page-header'>
+	  <h2>Calling server side functions from client and getting back result</h2>
+    </div>
+
+    <div class="row">
+      <div class="span6">
+		<h3 class="well">Server side</h3>
+		<div class="well">		
+<pre class="prettyprint linenums language-javascript">
+// ... server initialisation
+eurecaServer.exports.add = function (a, b) {
+    return a+b
+}
+
+//... other stuff
+</pre>		
+		</div>
+      </div>
+      <div class="span6">
+	  <h3 class="well">Client side</h3>
+		<div class="well">
+		
+<pre class="prettyprint linenums language-javascript">
+client.ready(function (proxy) {
+    proxy.add(10, 5).onReady(function(result) {
+		console.log('got result from server, 10+5=', result);
+	});
+});
+</pre>		
+
+		</div>
+      </div>
+    </div>
+	
+
+    <div class='page-header'>
+	  <h2>Calling client side functions from server and getting back result</h2>
+	  <p>
+	  in this example, client will call ping() function on the server, then the server
+	  well call pong() function on the client side<br />
+	  
+	  <span class="label label-warning">important</span>
+	  <b> client side functions need to be allowed first in the server side when creating the server object</b>
+	  </p>
+    </div>
+
+    <div class="row">
+      <div class="span6">
+		<h3 class="well">Server side</h3>
+		<div class="well">		
+<pre class="prettyprint linenums language-javascript">
+//we need to allow bar() function first
+var eurecaServer = new EurecaServer({allow:['bar']});
+
+// ... server initialisation
+eurecaServer.exports.foo = function () {
+    var conn = this.connection;
+    var client = eurecaServer.getClient(conn.id);
+    console.log('called foo()');
+    client.bar();
+}
+
+//... other stuff
+</pre>		
+		</div>
+      </div>
+      <div class="span6">
+	  <h3 class="well">Client side</h3>
+		<div class="well">
+		
+<pre class="prettyprint linenums language-javascript">
+client.exports.bar = function ()
+{
+    console.log('called bar()');
+}
+
+client.ready(function (proxy) {
+    proxy.foo();
+});
+</pre>		
+
+		</div>
+      </div>
+    </div>
+	
+    <div class='page-header'>
+	  <h2>Namespaces</h2>
+	  <p>
+	  we can expose functions under namespaces if we want to organise them for example
+	  </p>
+    </div>
+    <div class="row">
+      <div class="span6">
+		<h3 class="well">Server side</h3>
+		<div class="well">		
+<pre class="prettyprint linenums language-javascript">
+// ... server initialisation
+eurecaServer.exports.math = {
+	add = function (a, b) {
+		return a+b
+	},	
+	sub = function (a, b) {
+		return a-b
+	}
+}
+
+//... other stuff
+</pre>		
+		</div>
+      </div>
+      <div class="span6">
+	  <h3 class="well">Client side</h3>
+		<div class="well">
+		
+<pre class="prettyprint linenums language-javascript">
+client.ready(function (proxy) {
+	proxy.math.add(10, 5).onReady(function(result) {
+		console.log('got result from server, 10+5=', result);
+	});
+
+	proxy.math.sub(10, 5).onReady(function(result) {
+		console.log('got result from server, 10-5=', result);
+	});
+	
+});
+</pre>		
+
+		</div>
+      </div>
+    </div>
+	
+	
+
+    <div class='page-header'>
+	  <h2>TODO</h2>
+	  <p>This documentation is not complete, will be updated with more examples</p>
+    </div>	
+	
+  </div> <!-- /container -->
+  
+  
+  
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <script src="js/prettify.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script>
+    $(document).ready(function() {
+	/*
+		$("pre.language-javascript").snippet("javascript", {style:"pablo"});
+		$("pre.language-html").snippet("html", {style:"pablo"});
+		$('pre.prettyprint').css({'overflow':'auto', 'padding':'0px', 'padding-top':'20px'});
+		$('.linenums li').each(function(i){
+			var text = $(this).html();
+			$(this).html(text.replace(/\s/g, '&nbsp;'));
+			$(this).html(text.replace(/\t/g, '&nbsp;&nbsp;&nbsp;'));
+			$(this).css({'white-space':'nowrap', 'padding-left':'0px'})
+		});			
+	*/
+		/* syntax highlight */
+		
+		prettyPrint();	  
+		$('.linenums li span').each(function(i){
+			var text = $(this).html();
+			text = text.replace(/\s/g, '&nbsp;');
+			text.replace(/\t/g, '&nbsp;&nbsp;&nbsp;');
+			
+			$(this).html(text);
+			$(this).css({'white-space':'nowrap'});
+		});	
+		
+		/*************************/
+		
+		/* tabs 
+		$('.ctabs a').click(function (e) {
+		e.preventDefault();
+		$(this).tab('show');
+		})
+		/*************************/
+		
+
+      $("#style-toggle").click(function (e) {
+        e.preventDefault();
+
+        // Toggle <link> url
+        $link = $("link#darkstrap-link");
+        var href = $link.attr("href")
+        var css_url = 
+          href.length > 0 ?  "" : "css/darkstrap.css"
+        $link.attr("href", css_url);
+
+        // Toggle button text
+        $this = $(this);
+        var text = $this.text() == "Toggle Darkstrap" ?
+          "Toggle Bootstrap" : "Toggle Darkstrap";
+        $this.text(text);
+      });
+    });
+  </script>
+
+  <script type="text/javascript">
+    $(function () {
+      $("#tooltip-example").tooltip();
+    });
+  </script>
+
+
+  <script type="text/javascript">
+    $(function () {
+      $("#myCarousel").carousel();
+    });
+  </script>
+</body>
+</html>
